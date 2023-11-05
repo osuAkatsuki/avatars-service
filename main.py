@@ -2,12 +2,12 @@
 import atexit
 from contextlib import asynccontextmanager
 
+import aiobotocore.session
 import uvicorn
 from fastapi import FastAPI
 
 import app.clients
 import app.exception_handling
-import aiobotocore.session
 import app.logging
 import settings
 
