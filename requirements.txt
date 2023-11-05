@@ -1,3 +1,4 @@
+aiobotocore
 fastapi
 pydantic
 python-dotenv
