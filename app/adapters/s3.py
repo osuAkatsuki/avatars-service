@@ -4,9 +4,9 @@ import logging
 from typing import Any
 
 import botocore.exceptions
-import config
 
-from app.state import services
+import app.clients
+import settings
 
 
 async def upload(
@@ -17,7 +17,7 @@ async def upload(
     acl: str | None = None,
 ) -> None:
     params: dict[str, Any] = {
-        "Bucket": config.AWS_BUCKET_NAME,
+        "Bucket": settings.AWS_BUCKET_NAME,
         "Key": f"{folder}/{file_name}",
         "Body": body,
     }
@@ -27,7 +27,7 @@ async def upload(
         params["ACL"] = acl
 
     try:
-        await services.s3_client.put_object(**params)
+        await app.clients.s3_client.put_object(**params)
     except (botocore.exceptions.BotoCoreError, botocore.exceptions.ClientError) as exc:
         logging.error("Failed to upload file to S3", exc_info=exc)
         return None
@@ -37,8 +37,8 @@ async def upload(
 
 async def download(file_name: str, folder: str) -> bytes | None:
     try:
-        response = await services.s3_client.get_object(
-            Bucket=config.AWS_BUCKET_NAME,
+        response = await app.clients.s3_client.get_object(
+            Bucket=settings.AWS_BUCKET_NAME,
             Key=f"{folder}/{file_name}",
         )
     except (botocore.exceptions.BotoCoreError, botocore.exceptions.ClientError) as exc:

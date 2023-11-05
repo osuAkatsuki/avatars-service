@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import atexit
+import contextlib
 
 import uvicorn
 from fastapi import FastAPI
@@ -12,26 +13,25 @@ import settings
 asgi_app = FastAPI()
 
 
+ctx_stack = contextlib.AsyncExitStack()
+
+
 @asgi_app.on_event("startup")
 async def startup() -> None:
-    app.clients.s3_client = None
-    if (
-        config.AWS_ENDPOINT_URL
-        and config.AWS_REGION
-        and config.AWS_ACCESS_KEY_ID
-        and config.AWS_SECRET_ACCESS_KEY
-    ):
-        app.clients.s3_client = await ctx_stack.enter_async_context(
-            aiobotocore.session.get_session().create_client(  # type: ignore
-                "s3",
-                region_name=config.AWS_REGION,
-                aws_access_key_id=config.AWS_ACCESS_KEY_ID,
-                aws_secret_access_key=config.AWS_SECRET_ACCESS_KEY,
-                endpoint_url=config.AWS_ENDPOINT_URL,
-            ),
-        )
+    app.clients.s3_client = await ctx_stack.enter_async_context(
+        aiobotocore.session.get_session().create_client(  # type: ignore
+            "s3",
+            region_name=settings.AWS_REGION,
+            aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+            aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+            endpoint_url=settings.AWS_ENDPOINT_URL,
+        ),
+    )
 
-    app.logging.setup_logging()
+
+@asgi_app.on_event("shutdown")
+async def shutdown() -> None:
+    await ctx_stack.aclose()
 
 
 @asgi_app.route("/avatars/{file_path:path}")
