@@ -8,6 +8,7 @@ load_dotenv()
 def read_bool(value: str) -> bool:
     return value.lower() in ("1", "true")
 
+
 APP_ENV = os.environ["APP_ENV"]
 APP_HOST = os.environ["APP_HOST"]
 APP_PORT = int(os.environ["APP_PORT"])

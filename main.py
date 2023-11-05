@@ -1,15 +1,12 @@
 #!/usr/bin/env python3
+import atexit
 
 import fastapi
-
-import settings
-
 import uvicorn
-import logger
 
 import exception_handling
-
-import atexit
+import logger
+import settings
 
 
 def main() -> int:
