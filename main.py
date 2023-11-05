@@ -1,37 +1,30 @@
 #!/usr/bin/env python3
 import atexit
-import contextlib
+from contextlib import asynccontextmanager
 
 import uvicorn
 from fastapi import FastAPI
 
 import app.clients
 import app.exception_handling
+import aiobotocore.session
 import app.logging
 import settings
 
-asgi_app = FastAPI()
+
+@asynccontextmanager
+async def lifespan(asgi_app: FastAPI):
+    async with aiobotocore.session.get_session().create_client(
+        "s3",
+        region_name=settings.AWS_REGION,
+        aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+        aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+        endpoint_url=settings.AWS_ENDPOINT_URL,
+    ) as app.clients.s3_client:
+        yield
 
 
-ctx_stack = contextlib.AsyncExitStack()
-
-
-@asgi_app.on_event("startup")
-async def startup() -> None:
-    app.clients.s3_client = await ctx_stack.enter_async_context(
-        aiobotocore.session.get_session().create_client(  # type: ignore
-            "s3",
-            region_name=settings.AWS_REGION,
-            aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
-            aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
-            endpoint_url=settings.AWS_ENDPOINT_URL,
-        ),
-    )
-
-
-@asgi_app.on_event("shutdown")
-async def shutdown() -> None:
-    await ctx_stack.aclose()
+asgi_app = FastAPI(lifespan=lifespan)
 
 
 @asgi_app.route("/avatars/{file_path:path}")
