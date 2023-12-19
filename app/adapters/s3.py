@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 from typing import Any
+from typing import TypedDict
 
 import botocore.exceptions
 
@@ -34,8 +35,11 @@ async def upload(
 
     return None
 
+class DownloadResponse(TypedDict):
+    body: bytes
+    content_type: str
 
-async def download(file_name: str, folder: str) -> bytes | None:
+async def download(file_name: str, folder: str) -> DownloadResponse | None:
     try:
         response = await app.clients.s3_client.get_object(
             Bucket=settings.AWS_BUCKET_NAME,
@@ -47,4 +51,10 @@ async def download(file_name: str, folder: str) -> bytes | None:
         logging.error("Failed to download file from S3", exc_info=exc)
         return None
 
-    return await response["Body"].read()
+    body = await response["Body"].read()
+    content_type = response["ContentType"]
+
+    return {
+        "body": body,
+        "content_type": content_type,
+    }
