@@ -41,6 +41,8 @@ async def download(file_name: str, folder: str) -> bytes | None:
             Bucket=settings.AWS_BUCKET_NAME,
             Key=f"{folder}/{file_name}",
         )
+    except app.clients.s3_client.exceptions.NoSuchKey:
+        return None
     except (botocore.exceptions.BotoCoreError, botocore.exceptions.ClientError) as exc:
         logging.error("Failed to download file from S3", exc_info=exc)
         return None
