@@ -2,4 +2,6 @@ aiobotocore
 fastapi
 pydantic
 python-dotenv
+python-json-logger
+pyyaml
 uvicorn

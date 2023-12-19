@@ -10,6 +10,7 @@ import app.clients
 import app.exception_handling
 import app.logging
 import settings
+from app.api.v1 import avatars as avatars_v1
 
 
 @asynccontextmanager
@@ -27,9 +28,12 @@ async def lifespan(asgi_app: FastAPI):
 asgi_app = FastAPI(lifespan=lifespan)
 
 
-@asgi_app.route("/avatars/{file_path:path}")
-async def get_avatar(file_path: str) -> str:
-    return file_path
+@asgi_app.get("/_health")
+async def health():
+    return {"status": "ok"}
+
+
+asgi_app.include_router(avatars_v1.router)
 
 
 def main() -> int:
@@ -41,7 +45,6 @@ def main() -> int:
     uvicorn.run(
         "main:asgi_app",
         reload=settings.CODE_HOTRELOAD,
-        log_level=settings.LOG_LEVEL,
         server_header=False,
         date_header=False,
         host=settings.APP_HOST,
