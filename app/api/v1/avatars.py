@@ -23,4 +23,4 @@ async def get_avatar(file_path: str):
         if download_response is None:
             return Response(status_code=404)
 
-    return Response(content=download_response["body"], media_type="image/png")
+    return Response(content=download_response["body"], media_type=download_response["content_type"])
