@@ -19,8 +19,14 @@ async def get_avatar(file_path: str):
     if download_response is None:
         # fallback to a default avatar so we don't need to
         # duplicate the default avatar for all of our userbase
-        download_response = await s3.download(settings.DEFAULT_AVATAR_FILENAME, "avatars")
+        download_response = await s3.download(
+            file_name=settings.DEFAULT_AVATAR_FILENAME,
+            directory="avatars",
+        )
         if download_response is None:
             return Response(status_code=404)
 
-    return Response(content=download_response["body"], media_type=download_response["content_type"])
+    return Response(
+        content=download_response["body"],
+        media_type=download_response["content_type"],
+    )

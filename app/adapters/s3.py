@@ -35,15 +35,17 @@ async def upload(
 
     return None
 
+
 class DownloadResponse(TypedDict):
     body: bytes
     content_type: str
 
-async def download(file_name: str, folder: str) -> DownloadResponse | None:
+
+async def download(file_name: str, directory: str) -> DownloadResponse | None:
     try:
         response = await app.clients.s3_client.get_object(
             Bucket=settings.AWS_BUCKET_NAME,
-            Key=f"{folder}/{file_name}",
+            Key=f"{directory}/{file_name}",
         )
     except app.clients.s3_client.exceptions.NoSuchKey:
         return None
