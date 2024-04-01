@@ -18,7 +18,7 @@ async def upload(
     acl: str | None = None,
 ) -> None:
     params: dict[str, Any] = {
-        "Bucket": settings.AWS_BUCKET_NAME,
+        "Bucket": settings.S3_AWS_BUCKET_NAME,
         "Key": f"{folder}/{file_name}",
         "Body": body,
     }
@@ -44,7 +44,7 @@ class DownloadResponse(TypedDict):
 async def download(file_name: str, directory: str) -> DownloadResponse | None:
     try:
         response = await app.clients.s3_client.get_object(
-            Bucket=settings.AWS_BUCKET_NAME,
+            Bucket=settings.S3_AWS_BUCKET_NAME,
             Key=f"{directory}/{file_name}",
         )
     except app.clients.s3_client.exceptions.NoSuchKey:
