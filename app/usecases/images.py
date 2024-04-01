@@ -1,7 +1,7 @@
 import io
 import logging
-from enum import Enum
 import typing
+from enum import Enum
 
 from PIL import ImageFile
 
