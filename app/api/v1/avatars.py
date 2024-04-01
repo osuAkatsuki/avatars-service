@@ -29,10 +29,10 @@ def _get_status_code_for_error(error_code: ErrorCode) -> int:
         return 500
 
 
-@router.post("/api/v1/avatars/{user_id}")
+@router.post("/api/v1/users/{user_id}/avatar")
 async def upload_avatar(user_id: str, file_content: bytes = File(...)):
     data = await app.usecases.images.upload_image(
-        image_type=ImageType.USER_PROFILE_PICTURE,
+        image_type=ImageType.USER_AVATAR,
         image_content=file_content,
         file_name=f"{user_id}.png",
     )

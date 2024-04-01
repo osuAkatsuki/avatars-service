@@ -10,33 +10,38 @@ from app.errors import Error
 from app.errors import ErrorCode
 
 DISALLOWED_MODERATION_LABELS = [
+    # https://docs.aws.amazon.com/rekognition/latest/dg/moderation.html#moderation-api
     "Explicit Nudity",
-    "Suggestive",
-    "Violence",
-    "Visually Disturbing",
+    "Explicit Sexual Activity",
+    "Sex Toys",
+    "Obstructed Intimate Parts",
+    "Self-Harm",
+    "Blood & Gore",
+    "Death and Emaciation",
+    "Hate Symbols",
 ]
 
 
 class ImageType(str, Enum):
-    USER_PROFILE_PICTURE = "user_profile_picture"
+    USER_AVATAR = "user_avatar"
     USER_PROFILE_BACKGROUND = "user_profile_background"
     CLAN_ICON = "clan_icon"
     SCREENSHOT = "screenshot"
 
     def get_s3_folder(self) -> str:
         return {
-            ImageType.USER_PROFILE_PICTURE: "avatars",
+            ImageType.USER_AVATAR: "avatars",
             ImageType.USER_PROFILE_BACKGROUND: "profile-backgrounds",
             ImageType.CLAN_ICON: "clan-icons",
             ImageType.SCREENSHOT: "screenshots",
         }[self]
 
-    def get_desirable_size(self) -> tuple[int, int]:
+    def get_max_single_dimension_size(self) -> int:
         return {
-            ImageType.USER_PROFILE_PICTURE: (512, 512),
-            ImageType.USER_PROFILE_BACKGROUND: (1920, 1080),
-            ImageType.CLAN_ICON: (256, 256),
-            ImageType.SCREENSHOT: (1920, 1080),
+            ImageType.USER_AVATAR: 512,
+            ImageType.USER_PROFILE_BACKGROUND: 1920,
+            ImageType.CLAN_ICON: 256,
+            ImageType.SCREENSHOT: 1920,
         }[self]
 
 
@@ -50,35 +55,53 @@ async def upload_image(
     file_name: str,
 ) -> None | Error:
     try:
-        image = Image.open(image_content)
+        with io.BytesIO(image_content) as read_file:
+            image = Image.open(read_file)
 
-        # Resize Image
-        image.resize(image_type.get_desirable_size())
+            # Resize image if it is too large
+            max_single_dimension_size =  image_type.get_max_single_dimension_size()
+            if image.width > max_single_dimension_size or image.height > max_single_dimension_size:
+                biggest_dim = max(image.width, image.height)
+                ratio = max_single_dimension_size / biggest_dim
+                new_width = int(image.width * ratio)
+                new_height = int(image.height * ratio)
+                image = image.resize((new_width, new_height))
 
-        # TODO: Image Compression
+            # TODO: Image Compression
 
-        # Convert it to PNG format
-        with io.BytesIO() as f:
-            image.save(f, format="PNG")
-            image_content = f.getvalue()
+            # Convert it to PNG format
+            with io.BytesIO() as write_file:
+                image.save(write_file, format="PNG")
+                image_content = write_file.getvalue()
     except Exception:
-        return Error("Invalid Image", ErrorCode.INVALID_CONTENT)
-
-    moderation_labels = await rekognition.detect_moderation_labels(image_content)
-    if moderation_labels is None:
-        return Error("Service Unavailable", ErrorCode.SERVICE_UNAVAILABLE)
-
-    if should_disallow_upload(moderation_labels):
-        # TODO: store/audit log these occurrences persistently
-        logging.warning(
-            "Rejected image due to moderation labels",
+        logging.exception(
+            "Failed to process image",
             extra={
-                "image_type": image_type,
                 "file_name": file_name,
-                "moderation_labels": moderation_labels,
+                "image_type": image_type,
+                "image_size": len(image_content),
             },
         )
-        return Error("Inappropriate Content", ErrorCode.INAPPROPRIATE_CONTENT)
+        return Error("Invalid Image", ErrorCode.INVALID_CONTENT)
+
+    if image_type is not ImageType.SCREENSHOT:
+        # XXX: we currently do not moderate screenshots,
+        # as it would be significantly higher qps/cost.
+        moderation_labels = await rekognition.detect_moderation_labels(image_content)
+        if moderation_labels is None:
+            return Error("Service Unavailable", ErrorCode.SERVICE_UNAVAILABLE)
+
+        if should_disallow_upload(moderation_labels):
+            # TODO: store/audit log these occurrences persistently
+            logging.warning(
+                "Rejected image due to moderation labels",
+                extra={
+                    "image_type": image_type,
+                    "file_name": file_name,
+                    "moderation_labels": moderation_labels,
+                },
+            )
+            return Error("Inappropriate Content", ErrorCode.INAPPROPRIATE_CONTENT)
 
     await s3.upload(
         body=image_content,
