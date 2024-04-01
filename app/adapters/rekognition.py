@@ -12,6 +12,10 @@ async def detect_moderation_labels(image: bytes) -> list[str] | None:
             MinConfidence=70,
         )
     except app.clients.rekognition_client.exceptions.ImageTooLargeException:
+        logging.warning(
+            "Image too large to detect moderation labels",
+            extra={"image_size": len(image)},
+        )
         return None
     except (
         botocore.exceptions.BotoCoreError,
