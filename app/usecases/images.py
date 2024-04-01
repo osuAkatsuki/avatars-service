@@ -76,6 +76,8 @@ async def upload_image(
     try:
         image = _get_image_file_from_data(image_content)
         image_format = image.format
+        if image_format is None:
+            return Error("Invalid Image Format", ErrorCode.INVALID_CONTENT)
 
         image_mime_type = image.get_format_mimetype()
         if image_mime_type not in ALLOWED_MIME_TYPES:
@@ -130,10 +132,9 @@ async def upload_image(
             )
             return Error("Inappropriate Content", ErrorCode.INAPPROPRIATE_CONTENT)
 
-    file_ext = f".{image_format.lower()}" if image_format else ""
     await s3.upload(
         body=image_content,
-        file_name=f"{no_ext_file_name}{file_ext}",
+        file_name=f"{no_ext_file_name}.{image_format.lower()}",
         folder=image_type.get_s3_folder(),
         content_type=image_mime_type,
     )
