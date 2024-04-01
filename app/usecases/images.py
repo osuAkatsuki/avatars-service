@@ -45,7 +45,7 @@ def should_disallow_upload(moderation_labels: list[str]) -> bool:
 
 
 async def upload_image(
-    content_type: ImageType,
+    image_type: ImageType,
     body: bytes,
     file_name: str,
 ) -> None | Error:
@@ -53,7 +53,7 @@ async def upload_image(
         image = Image.open(body)
 
         # Resize Image
-        image.resize(content_type.get_desirable_size())
+        image.resize(image_type.get_desirable_size())
 
         # TODO: Image Compression
 
@@ -73,7 +73,7 @@ async def upload_image(
         logging.warning(
             "Rejected image due to moderation labels",
             extra={
-                "image_type": content_type,
+                "image_type": image_type,
                 "file_name": file_name,
                 "moderation_labels": moderation_labels,
             },
@@ -83,7 +83,7 @@ async def upload_image(
     await s3.upload(
         body=body,
         file_name=file_name,
-        folder=content_type.get_s3_folder(),
+        folder=image_type.get_s3_folder(),
         content_type="image/png",
     )
     return None
