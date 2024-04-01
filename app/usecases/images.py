@@ -108,11 +108,12 @@ async def upload_image(
         return Error("Invalid Image", ErrorCode.INVALID_CONTENT)
 
     if (
-        image_type is not ImageType.SCREENSHOT
-        and image_mime_type not in VIDEO_MIME_TYPES
+        # TODO: we do not yet support video types from a technical lens
+        #       we'll likely want to add this (at least) for gif profile backgrounds
+        image_mime_type not in VIDEO_MIME_TYPES
+        # TODO: we do not yet support screenshots due to high qps/cost
+        and image_type is not ImageType.SCREENSHOT
     ):
-        # XXX: we currently do not moderate screenshots,
-        # as it would be significantly higher qps/cost.
         moderation_labels = await rekognition.detect_moderation_labels(image_content)
         if moderation_labels is None:
             return Error("Service Unavailable", ErrorCode.SERVICE_UNAVAILABLE)
