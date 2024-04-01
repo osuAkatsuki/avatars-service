@@ -46,11 +46,11 @@ def should_disallow_upload(moderation_labels: list[str]) -> bool:
 
 async def upload_image(
     image_type: ImageType,
-    body: bytes,
+    image_content: bytes,
     file_name: str,
 ) -> None | Error:
     try:
-        image = Image.open(body)
+        image = Image.open(image_content)
 
         # Resize Image
         image.resize(image_type.get_desirable_size())
@@ -60,11 +60,11 @@ async def upload_image(
         # Convert it to PNG format
         with io.BytesIO() as f:
             image.save(f, format="PNG")
-            body = f.getvalue()
+            image_content = f.getvalue()
     except Exception:
         return Error("Invalid Image", ErrorCode.INVALID_CONTENT)
 
-    moderation_labels = await rekognition.detect_moderation_labels(body)
+    moderation_labels = await rekognition.detect_moderation_labels(image_content)
     if moderation_labels is None:
         return Error("Service Unavailable", ErrorCode.SERVICE_UNAVAILABLE)
 
@@ -81,7 +81,7 @@ async def upload_image(
         return Error("Inappropriate Content", ErrorCode.INAPPROPRIATE_CONTENT)
 
     await s3.upload(
-        body=body,
+        body=image_content,
         file_name=file_name,
         folder=image_type.get_s3_folder(),
         content_type="image/png",
