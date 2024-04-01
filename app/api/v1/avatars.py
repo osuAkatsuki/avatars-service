@@ -1,3 +1,5 @@
+import logging
+
 from fastapi import APIRouter
 from fastapi import File
 from fastapi import Response
@@ -13,11 +15,18 @@ router = APIRouter()
 
 
 def _get_status_code_for_error(error_code: ErrorCode) -> int:
-    return {
-        ErrorCode.INVALID_CONTENT: 400,
-        ErrorCode.INAPPROPRIATE_CONTENT: 400,
-        ErrorCode.SERVICE_UNAVAILABLE: 503,
-    }[error_code]
+    try:
+        return {
+            ErrorCode.INVALID_CONTENT: 400,
+            ErrorCode.INAPPROPRIATE_CONTENT: 400,
+            ErrorCode.SERVICE_UNAVAILABLE: 503,
+        }[error_code]
+    except KeyError:
+        logging.warning(
+            "Unmapped error code while resolving http status code",
+            extra={"error_code": error_code},
+        )
+        return 500
 
 
 @router.post("/api/v1/avatars/{user_id}")
