@@ -21,17 +21,17 @@ async def lifespan(asgi_app: FastAPI):
     async with (
         session.create_client(
             service_name="s3",
-            region_name=settings.S3_AWS_REGION,
-            aws_access_key_id=settings.S3_AWS_ACCESS_KEY_ID,
-            aws_secret_access_key=settings.S3_AWS_SECRET_ACCESS_KEY,
-            endpoint_url=settings.S3_AWS_ENDPOINT_URL,
+            region_name=settings.AWS_S3_REGION,
+            aws_access_key_id=settings.AWS_S3_ACCESS_KEY_ID,
+            aws_secret_access_key=settings.AWS_S3_SECRET_ACCESS_KEY,
+            endpoint_url=settings.AWS_S3_ENDPOINT_URL,
         ) as app.clients.s3_client,
         session.create_client(
             service_name="rekognition",
-            region_name=settings.REKOGNITION_AWS_REGION,
-            aws_access_key_id=settings.REKOGNITION_AWS_ACCESS_KEY_ID,
-            aws_secret_access_key=settings.REKOGNITION_AWS_SECRET_ACCESS_KEY,
-            endpoint_url=settings.REKOGNITION_AWS_ENDPOINT_URL,
+            region_name=settings.AWS_REKOGNITION_REGION,
+            aws_access_key_id=settings.AWS_REKOGNITION_ACCESS_KEY_ID,
+            aws_secret_access_key=settings.AWS_REKOGNITION_SECRET_ACCESS_KEY,
+            endpoint_url=settings.AWS_REKOGNITION_ENDPOINT_URL,
         ) as app.clients.rekognition_client,
     ):
         yield
