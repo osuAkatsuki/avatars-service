@@ -1,13 +1,26 @@
 import io
 import logging
 from enum import Enum
+import typing
 
-from PIL import Image
+from PIL import ImageFile
 
 from app.adapters import rekognition
 from app.adapters import s3
 from app.errors import Error
 from app.errors import ErrorCode
+
+ALLOWED_MIME_TYPES = {
+    "image/png",
+    "image/jpeg",
+    "image/gif",
+    "image/webp",
+}
+
+VIDEO_MIME_TYPES = {
+    "image/gif",
+    # TODO?: I think image/apng may be slipping past here
+}
 
 DISALLOWED_MODERATION_LABELS = [
     # https://docs.aws.amazon.com/rekognition/latest/dg/moderation.html#moderation-api
@@ -49,42 +62,55 @@ def should_disallow_upload(moderation_labels: list[str]) -> bool:
     return any(l in DISALLOWED_MODERATION_LABELS for l in moderation_labels)
 
 
+def _get_image_file_from_data(data: bytes) -> ImageFile.ImageFile:
+    parser = ImageFile.Parser()
+    parser.feed(data)
+    return typing.cast(ImageFile.ImageFile, parser.close())
+
+
 async def upload_image(
     image_type: ImageType,
     image_content: bytes,
-    file_name: str,
+    no_ext_file_name: str,
 ) -> None | Error:
     try:
-        with io.BytesIO(image_content) as read_file:
-            image = Image.open(read_file)
+        image = _get_image_file_from_data(image_content)
+        image_format = image.format
 
-            # Resize image if it is too large
-            max_single_dimension_size =  image_type.get_max_single_dimension_size()
-            if image.width > max_single_dimension_size or image.height > max_single_dimension_size:
-                biggest_dim = max(image.width, image.height)
-                ratio = max_single_dimension_size / biggest_dim
-                new_width = int(image.width * ratio)
-                new_height = int(image.height * ratio)
-                image = image.resize((new_width, new_height))
+        image_mime_type = image.get_format_mimetype()
+        if image_mime_type not in ALLOWED_MIME_TYPES:
+            return Error("Invalid Image Content Type", ErrorCode.INVALID_CONTENT)
 
-            # TODO: Image Compression
+        # Resize image if it is too large
+        max_single_dimension_size = image_type.get_max_single_dimension_size()
+        if (
+            image.width > max_single_dimension_size
+            or image.height > max_single_dimension_size
+        ):
+            biggest_dim = max(image.width, image.height)
+            ratio = max_single_dimension_size / biggest_dim
+            new_width = int(image.width * ratio)
+            new_height = int(image.height * ratio)
+            image = image.resize((new_width, new_height))
 
-            # Convert it to PNG format
-            with io.BytesIO() as write_file:
-                image.save(write_file, format="PNG")
-                image_content = write_file.getvalue()
+        with io.BytesIO() as f:
+            image.save(f, format=image_format)
+            image_content = f.getvalue()
     except Exception:
         logging.exception(
             "Failed to process image",
             extra={
-                "file_name": file_name,
+                "file_name": no_ext_file_name,
                 "image_type": image_type,
                 "image_size": len(image_content),
             },
         )
         return Error("Invalid Image", ErrorCode.INVALID_CONTENT)
 
-    if image_type is not ImageType.SCREENSHOT:
+    if (
+        image_type is not ImageType.SCREENSHOT
+        and image_mime_type not in VIDEO_MIME_TYPES
+    ):
         # XXX: we currently do not moderate screenshots,
         # as it would be significantly higher qps/cost.
         moderation_labels = await rekognition.detect_moderation_labels(image_content)
@@ -97,16 +123,17 @@ async def upload_image(
                 "Rejected image due to moderation labels",
                 extra={
                     "image_type": image_type,
-                    "file_name": file_name,
+                    "file_name": no_ext_file_name,
                     "moderation_labels": moderation_labels,
                 },
             )
             return Error("Inappropriate Content", ErrorCode.INAPPROPRIATE_CONTENT)
 
+    file_ext = f".{image_format.lower()}" if image_format else ""
     await s3.upload(
         body=image_content,
-        file_name=file_name,
+        file_name=f"{no_ext_file_name}{file_ext}",
         folder=image_type.get_s3_folder(),
-        content_type="image/png",
+        content_type=image_mime_type,
     )
     return None
