@@ -3,7 +3,7 @@ name: k8s-deploy
 on:
   push:
     branches:
-      - main
+      - master
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
