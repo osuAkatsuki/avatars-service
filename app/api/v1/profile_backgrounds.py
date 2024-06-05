@@ -1,3 +1,5 @@
+import logging
+
 from fastapi import APIRouter
 from fastapi import Response
 
@@ -16,7 +18,16 @@ async def get_profile_background(file_path: str):
         directory="profile-backgrounds",
     )
     if download_response is None:
+        logging.warning(
+            "Failed to serve non-existent user profile background",
+            extra={"file_path": file_path},
+        )
         return Response(status_code=404)
+
+    logging.info(
+        "Served user profile background",
+        extra={"file_path": file_path},
+    )
 
     return Response(
         content=download_response["body"],
