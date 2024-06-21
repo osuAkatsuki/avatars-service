@@ -16,13 +16,24 @@ from app.api.v1 import profile_backgrounds as profile_backgrounds_v1
 
 @asynccontextmanager
 async def lifespan(asgi_app: FastAPI):
-    async with aiobotocore.session.get_session().create_client(
-        "s3",
-        region_name=settings.AWS_REGION,
-        aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
-        aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
-        endpoint_url=settings.AWS_ENDPOINT_URL,
-    ) as app.clients.s3_client:
+    session = aiobotocore.session.get_session()
+
+    async with (
+        session.create_client(
+            service_name="s3",
+            region_name=settings.AWS_S3_REGION,
+            aws_access_key_id=settings.AWS_S3_ACCESS_KEY_ID,
+            aws_secret_access_key=settings.AWS_S3_SECRET_ACCESS_KEY,
+            endpoint_url=settings.AWS_S3_ENDPOINT_URL,
+        ) as app.clients.s3_client,
+        session.create_client(
+            service_name="rekognition",
+            region_name=settings.AWS_REKOGNITION_REGION,
+            aws_access_key_id=settings.AWS_REKOGNITION_ACCESS_KEY_ID,
+            aws_secret_access_key=settings.AWS_REKOGNITION_SECRET_ACCESS_KEY,
+            endpoint_url=settings.AWS_REKOGNITION_ENDPOINT_URL,
+        ) as app.clients.rekognition_client,
+    ):
         yield
 
 
