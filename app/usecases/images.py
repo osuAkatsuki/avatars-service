@@ -5,6 +5,7 @@ from enum import Enum
 
 from PIL import ImageFile
 
+import settings
 from app.adapters import rekognition
 from app.adapters import s3
 from app.errors import Error
@@ -109,28 +110,31 @@ async def upload_image(
         )
         return Error("Invalid Image", ErrorCode.INVALID_CONTENT)
 
-    if (
-        # TODO: we do not yet support video types from a technical lens
-        #       we'll likely want to add this (at least) for gif profile backgrounds
-        image_mime_type not in VIDEO_MIME_TYPES
-        # TODO: we do not yet support screenshots due to high qps/cost
-        and image_type is not ImageType.SCREENSHOT
-    ):
-        moderation_labels = await rekognition.detect_moderation_labels(image_content)
-        if moderation_labels is None:
-            return Error("Service Unavailable", ErrorCode.SERVICE_UNAVAILABLE)
-
-        if should_disallow_upload(moderation_labels):
-            # TODO: store/audit log these occurrences persistently
-            logging.warning(
-                "Rejected image due to moderation labels",
-                extra={
-                    "image_type": image_type,
-                    "file_name": no_ext_file_name,
-                    "moderation_labels": moderation_labels,
-                },
+    if settings.SHOULD_FILTER_INAPPROPRIATE_CONTENT:
+        if (
+            # TODO: we do not yet support video types from a technical lens
+            #       we'll likely want to add this (at least) for gif profile backgrounds
+            image_mime_type not in VIDEO_MIME_TYPES
+            # TODO: we do not yet support screenshots due to high qps/cost
+            and image_type is not ImageType.SCREENSHOT
+        ):
+            moderation_labels = await rekognition.detect_moderation_labels(
+                image_content,
             )
-            return Error("Inappropriate Content", ErrorCode.INAPPROPRIATE_CONTENT)
+            if moderation_labels is None:
+                return Error("Service Unavailable", ErrorCode.SERVICE_UNAVAILABLE)
+
+            if should_disallow_upload(moderation_labels):
+                # TODO: store/audit log these occurrences persistently
+                logging.warning(
+                    "Rejected image due to moderation labels",
+                    extra={
+                        "image_type": image_type,
+                        "file_name": no_ext_file_name,
+                        "moderation_labels": moderation_labels,
+                    },
+                )
+                return Error("Inappropriate Content", ErrorCode.INAPPROPRIATE_CONTENT)
 
     await s3.upload(
         body=image_content,
