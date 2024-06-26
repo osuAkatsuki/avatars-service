@@ -1,12 +1,15 @@
 import logging
 
 from fastapi import APIRouter
+from fastapi import Depends
 from fastapi import File
 from fastapi import Response
 
 import app.usecases.images
 import settings
 from app.adapters import s3
+from app.api.authorization import AdminAuthorization
+from app.api.authorization import authorize_admin
 from app.errors import Error
 from app.errors import ErrorCode
 from app.usecases.images import ImageType
@@ -30,11 +33,16 @@ def _get_status_code_for_error(error_code: ErrorCode) -> int:
 
 
 @router.post("/api/v1/users/{user_id}/avatar")
-async def upload_avatar(user_id: str, file_content: bytes = File(...)):
+async def upload_avatar(
+    user_id: str,
+    file_content: bytes = File(...),
+    authorization: AdminAuthorization = Depends(authorize_admin),
+):
     data = await app.usecases.images.upload_image(
         image_type=ImageType.USER_AVATAR,
         image_content=file_content,
         no_ext_file_name=f"{user_id}",
+        authorization=authorization,
     )
     if isinstance(data, Error):
         return Response(

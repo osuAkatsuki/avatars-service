@@ -8,6 +8,7 @@ from PIL import ImageFile
 import settings
 from app.adapters import rekognition
 from app.adapters import s3
+from app.api.authorization import AbstractAuthorization
 from app.errors import Error
 from app.errors import ErrorCode
 
@@ -73,6 +74,7 @@ async def upload_image(
     image_type: ImageType,
     image_content: bytes,
     no_ext_file_name: str,
+    authorization: AbstractAuthorization,
 ) -> None | Error:
     try:
         image = _get_image_file_from_data(image_content)
@@ -106,6 +108,7 @@ async def upload_image(
                 "file_name": no_ext_file_name,
                 "image_type": image_type,
                 "image_size": len(image_content),
+                "authorization": authorization.format_for_logs(),
             },
         )
         return Error("Invalid Image", ErrorCode.INVALID_CONTENT)
@@ -132,6 +135,7 @@ async def upload_image(
                         "image_type": image_type,
                         "file_name": no_ext_file_name,
                         "moderation_labels": moderation_labels,
+                        "authorization": authorization.format_for_logs(),
                     },
                 )
                 return Error("Inappropriate Content", ErrorCode.INAPPROPRIATE_CONTENT)
@@ -142,4 +146,14 @@ async def upload_image(
         folder=image_type.get_s3_folder(),
         content_type=image_mime_type,
     )
+    logging.info(
+        "Uploaded image",
+        extra={
+            "file_name": no_ext_file_name,
+            "image_type": image_type,
+            "image_size": len(image_content),
+            "authorization": authorization.format_for_logs(),
+        },
+    )
+
     return None

@@ -12,6 +12,7 @@ def read_bool(value: str) -> bool:
 APP_ENV = os.environ["APP_ENV"]
 APP_HOST = os.environ["APP_HOST"]
 APP_PORT = int(os.environ["APP_PORT"])
+APP_API_KEY = os.environ["APP_API_KEY"]
 
 CODE_HOTRELOAD = read_bool(os.environ["CODE_HOTRELOAD"])
 
