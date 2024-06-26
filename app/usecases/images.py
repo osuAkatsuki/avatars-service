@@ -23,8 +23,8 @@ VIDEO_MIME_TYPES = {
     # TODO?: I think image/apng may be slipping past here
 }
 
-DISALLOWED_MODERATION_LABELS = [
-    # https://docs.aws.amazon.com/rekognition/latest/dg/moderation.html#moderation-api
+# https://docs.aws.amazon.com/rekognition/latest/dg/moderation.html#moderation-api
+DISALLOWED_MODERATION_LABELS = {
     "Explicit Nudity",
     "Explicit Sexual Activity",
     "Sex Toys",
@@ -33,7 +33,7 @@ DISALLOWED_MODERATION_LABELS = [
     "Blood & Gore",
     "Death and Emaciation",
     "Hate Symbols",
-]
+}
 
 
 class ImageType(str, Enum):
