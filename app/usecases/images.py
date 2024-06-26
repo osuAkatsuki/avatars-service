@@ -83,16 +83,16 @@ async def upload_image(
         if image_mime_type not in ALLOWED_MIME_TYPES:
             return Error("Invalid Image Content Type", ErrorCode.INVALID_CONTENT)
 
-        # Resize image if it is too large
+        # Resize image if it is too large. Maintain aspect ratio.
         max_single_dimension_size = image_type.get_max_single_dimension_size()
         if (
             image.width > max_single_dimension_size
             or image.height > max_single_dimension_size
         ):
-            biggest_dim = max(image.width, image.height)
-            ratio = max_single_dimension_size / biggest_dim
-            new_width = int(image.width * ratio)
-            new_height = int(image.height * ratio)
+            biggest_dimension = max(image.width, image.height)
+            aspect_ratio = max_single_dimension_size / biggest_dimension
+            new_width = int(image.width * aspect_ratio)
+            new_height = int(image.height * aspect_ratio)
             image = image.resize((new_width, new_height))
 
         with io.BytesIO() as f:
