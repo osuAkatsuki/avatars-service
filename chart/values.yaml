@@ -4,7 +4,7 @@ apps:
     codebase: avatars-service
     autoscaling:
       enabled: true
-      minReplicas: 2
+      minReplicas: 1
       maxReplicas: 5
       targetCPUUtilizationPercentage: 80
     container:
@@ -26,8 +26,8 @@ apps:
           cpu: 400m
           memory: 400Mi
         requests:
-          cpu: 250m
-          memory: 250Mi
+          cpu: 200m
+          memory: 200Mi
       env:
         - name: APP_COMPONENT
           value: api
