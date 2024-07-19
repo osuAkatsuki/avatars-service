@@ -7,9 +7,12 @@ from collections.abc import Callable
 from types import TracebackType
 from typing import Any
 from typing import Optional
+from typing import TypeVar
+
+ExcType = TypeVar("ExcType", bound=BaseException)
 
 ExceptionHook = Callable[
-    [type[BaseException], BaseException, Optional[TracebackType]],
+    [type[ExcType], ExcType, Optional[TracebackType]],
     Any,
 ]
 ThreadingExceptionHook = Callable[[threading.ExceptHookArgs], Any]
@@ -19,8 +22,8 @@ _default_threading_excepthook: ThreadingExceptionHook | None = None
 
 
 def internal_exception_handler(
-    exc_type: type[BaseException],
-    exc_value: BaseException,
+    exc_type: type[ExcType],
+    exc_value: ExcType,
     exc_traceback: TracebackType | None,
 ) -> None:
     logging.exception(
