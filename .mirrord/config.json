@@ -1,0 +1,20 @@
+{
+  "target": {
+    "path": "deployment/assets-service-api-production",
+    "namespace": "default"
+  },
+  "agent": {
+    "namespace": "mirrord"
+  },
+  "feature": {
+    "network": {
+      "incoming": {
+        "mode": "steal",
+        "http_filter": {
+          "header_filter": "branch: josh"
+        },
+        "port_mapping": [[10000, 80]]
+      }
+    }
+  }
+}

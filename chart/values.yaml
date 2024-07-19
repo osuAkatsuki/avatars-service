@@ -1,7 +1,7 @@
 apps:
-  - name: avatars-service-api
+  - name: assets-service-api
     environment: production
-    codebase: avatars-service
+    codebase: assets-service
     autoscaling:
       enabled: true
       minReplicas: 1
@@ -9,7 +9,7 @@ apps:
       targetCPUUtilizationPercentage: 80
     container:
       image:
-        repository: osuakatsuki/avatars-service
+        repository: osuakatsuki/assets-service
         tag: latest
       port: 80
       readinessProbe:

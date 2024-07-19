@@ -7,7 +7,7 @@ if [ -z "$APP_ENV" ]; then
 fi
 
 if [[ $PULL_SECRETS_FROM_VAULT -eq 1 ]]; then
-  akatsuki vault get avatars-service $APP_ENV -o .env
+  akatsuki vault get assets-service $APP_ENV -o .env
   source .env
 fi
 
