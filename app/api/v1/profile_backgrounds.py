@@ -9,6 +9,7 @@ router = APIRouter()
 
 
 @router.get("/api/v1/profile-backgrounds/{file_path:path}")
+@router.get("/public/api/v1/profile-backgrounds/{file_path:path}")
 async def get_profile_background(file_path: str):
     if ".." in file_path or "/" in file_path:
         return Response(status_code=404)
