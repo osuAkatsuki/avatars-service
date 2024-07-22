@@ -58,7 +58,10 @@ async def get_clan_icon(file_path: str):
     if ".." in file_path or "/" in file_path:
         return Response(status_code=404)
 
-    download_response = await s3.download(file_path, "clan-icons")
+    download_response = await s3.download(
+        file_path,
+        directory=ImageType.CLAN_ICON.get_s3_folder(),
+    )
     if download_response is None:
         logging.warning(
             "Failed to serve non-existent clan icon",
