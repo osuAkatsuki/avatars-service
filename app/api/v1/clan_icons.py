@@ -69,7 +69,7 @@ async def get_avatar(file_path: str):
         )
         return Response(status_code=404)
 
-    logging.info("Served user avatar", extra={"file_path": file_path})
+    logging.info("Served clan icon", extra={"file_path": file_path})
 
     return Response(
         content=download_response["body"],
