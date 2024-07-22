@@ -11,6 +11,7 @@ import app.exception_handling
 import app.logging
 import settings
 from app.api.v1 import avatars as avatars_v1
+from app.api.v1 import clan_icons as clan_icons_v1
 from app.api.v1 import profile_backgrounds as profile_backgrounds_v1
 
 
@@ -46,6 +47,7 @@ async def health():
 
 
 asgi_app.include_router(avatars_v1.router)
+asgi_app.include_router(clan_icons_v1.router)
 asgi_app.include_router(profile_backgrounds_v1.router)
 
 
