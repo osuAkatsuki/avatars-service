@@ -33,7 +33,7 @@ def _get_status_code_for_error(error_code: ErrorCode) -> int:
 
 
 @router.post("/api/v1/clans/{clan_id}/icon")
-async def upload_avatar(
+async def upload_clan_icon(
     clan_id: str,
     file_content: bytes = File(...),
     authorization: AdminAuthorization = Depends(authorize_admin),
@@ -54,7 +54,7 @@ async def upload_avatar(
 
 @router.get("/api/v1/clan-icons/{file_path:path}")
 @router.get("/public/api/v1/clan-icons/{file_path:path}")
-async def get_avatar(file_path: str):
+async def get_clan_icon(file_path: str):
     if ".." in file_path or "/" in file_path:
         return Response(status_code=404)
 
