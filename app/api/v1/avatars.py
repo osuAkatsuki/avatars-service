@@ -34,7 +34,7 @@ def _get_status_code_for_error(error_code: ErrorCode) -> int:
 
 @router.post("/api/v1/users/{user_id}/avatar")
 async def upload_avatar(
-    user_id: str,
+    user_id: int,
     file_content: bytes = File(...),
     authorization: AdminAuthorization = Depends(authorize_admin),
 ):

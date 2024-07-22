@@ -34,7 +34,7 @@ def _get_status_code_for_error(error_code: ErrorCode) -> int:
 
 @router.post("/api/v1/clans/{clan_id}/icon")
 async def upload_clan_icon(
-    clan_id: str,
+    clan_id: int,
     file_content: bytes = File(...),
     authorization: AdminAuthorization = Depends(authorize_admin),
 ):
